@@ -1,0 +1,63 @@
+---
+title: "UTSDATMIN"
+author: "riva adli dzil ikram"
+date: "October 27, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+library(randomForest)
+```{r}
+library(caret)
+library(psych)
+bendera <- read.csv("../datmin/flag.csv", header=FALSE)
+head(bendera)
+str(bendera)
+
+for(i in names(bendera)){
+  bendera[,i]=as.factor(bendera[,i])
+}
+str(bendera)
+
+pairs.panels(bendera)
+
+set.seed(1234)
+sampel<-sample(2,nrow(bendera),replace = T, prob = c(0.8,0.2))
+trainingdat<-bendera[sampel==1, ]
+testingdat<-bendera[sampel==2, ]
+print(paste("Jumlah Train Data: ", nrow(trainingdat), "| Jumlah Test Data: ", nrow(testingdat)))
+
+
+
+#set.seed(123)   
+model <- randomForest(V6~V2+V3+V5+V7+V8+V9+V10+V11+V12+V13+V14+V15+V16+V17+V18+V19+V20+V21+V22+V23+V24+V25+V26+V27+V28+V29+V30, data=trainingdat, ntree=500)
+model
+
+prediksiRF <- predict(model, testingdat)
+confusionMatrix(table(prediksiRF, testingdat$V6))
+
+```
+# menyetel tree
+setelan<-tuneRF(trainingdat[,7], 
+                stepFactor = 0.5, #besarnya peningkatan mtry tiap iterasi
+                plot = TRUE, 
+                ntreeTry = 100, #banyak pohon
+                trace = TRUE,  
+                improve = 0.05)
+```
+
+Terlihat dari plot setelan, OOB terendah berada pada **mtry = 16**.
+
+#### Membuat model dengan mtry = 16
+
+model16 <- randomForest(V6~., data = trainingdat, ntree = 300, mtry = 16, importance = TRUE, proximity = TRUE)
+model16
+
+
+#### Confusion matrix mtry = 16
+Terlihat dari model hasil perubahan mtry, akurasi model meningkat sebanyak 5%
+
+prediksiRF<-predict(model16,testingdat)
+confusionMatrix(table(prediksiRF, testingdat$V6)
